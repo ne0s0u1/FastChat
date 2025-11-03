@@ -50,6 +50,25 @@
   <button id="sendBtn">发送</button>
   <pre id="output">（等待输入）</pre>
 
+  <!-- 拼接提示词面板 -->
+<div class="prompt-builder" style="margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+  <h3 style="margin-bottom: 10px; font-size: 16px;">🔧 拼接提示词</h3>
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <label>目标语言：</label>
+    <input type="text" id="targetLang" placeholder="例如：ja 或 zh" style="padding:8px;border:1px solid #ccc;border-radius:8px;">
+
+    <label>Best（最佳翻译参考）：</label>
+    <textarea id="bestExample" placeholder="例如：AI音乐生成器 => 音楽生成AI" style="min-height:60px;padding:8px;border:1px solid #ccc;border-radius:8px;resize:vertical;"></textarea>
+
+    <label>源JSON：</label>
+    <textarea id="sourceJson" placeholder='在此粘贴原始JSON' style="min-height:120px;padding:8px;border:1px solid #ccc;border-radius:8px;resize:vertical;font-family:monospace;"></textarea>
+
+    <button id="buildPromptBtn" class="btn btn-ok" style="margin-top: 10px;">⚙️ 拼接提示词</button>
+  </div>
+</div>
+
+
 <script>
 const API = "https://fast-chat-worker.ne0s0u1-pd.workers.dev"; // 例如 https://fastchat.ne0s0u1.workers.dev
 
@@ -89,6 +108,49 @@ sendBtn.addEventListener("click", async () => {
     sendBtn.disabled = false;
   }
 });
+
+  // 拼接提示词逻辑
+document.getElementById("buildPromptBtn").addEventListener("click", () => {
+  const lang = document.getElementById("targetLang").value.trim();
+  const best = document.getElementById("bestExample").value.trim();
+  const srcJson = document.getElementById("sourceJson").value.trim();
+
+  if (!lang || !srcJson) {
+    alert("请至少填写目标语言与源JSON。");
+    return;
+  }
+
+  const template = `你是一名专业的多语言本土化与 SEO 翻译专家。现需要将输入的JSON为目标语言，并输出为在原版JSON上改动后形成的JSON
+现在的目标语言为 ${lang}
+最佳翻译为：${best}
+【硬性规则】
+1. 德语连字符（-）禁止规则 — 最高优先级：
+2. 任何德语翻译中绝对禁止出现连字符（“-”），无论原文是否包含；必须改为常见的自然书写。
+例如 “AUDIO-ZU-MIDI” 必须输出为 “Audio zu MIDI”（无连字符），而非任何 “Audio-zu-MIDI / Audio-Zu-Midi”等带连字符形式。
+若去掉连字符会影响可读性或 SEO，也必须优先去掉连字符并采用最常见的写法（可用空格或合适大小写替代）。
+3. 返回的必须是JSON，且不能输出其他无关内容
+4. 只改动JSON中文案相关内容，id，component，CTALinkLink之类的不得翻译
+5. “|” 是普通正文字符，绝非分隔符；例如 “Free Key and BPM Finder | Find Song Key & BPM Online” 必须视为 一句完整文本整体翻译，绝不能拆分。
+6. 本土化 + SEO 优先：采用目标市场最自然、搜索量更高的说法；避免逐词直译；行业中常保留的英文外来词可保留。
+7. 品牌名/专有名词按目标市场约定处理：常见不翻译的保留原文；翻译会致歧义时保持原文。
+8. 非常重要：要将JSON中的CTAlink修改成对应语言的link，比如源JSON为/music-generator，需要翻译成繁体中文，那么修改后的就是/tw/music-generator
+9. 若原JSON中的...labelname为中文，不得翻译，保留中文
+【输出格式（务必严格遵守）】
+不得出现多余引号、额外解释或 Markdown 包裹。
+必须保持原有JSON的结构不能改动
+以下是源JSON
+
+${srcJson}
+`;
+
+  const targetBox = document.getElementById("prompt") || document.getElementById("customPrompt");
+  if (targetBox) {
+    targetBox.value = template;
+    targetBox.scrollIntoView({ behavior: "smooth" });
+  }
+  showToast("提示词已拼接完成");
+});
+
 </script>
 </body>
 </html>
