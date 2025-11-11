@@ -105,7 +105,7 @@ textarea{min-height:160px;resize:vertical;}
   <h1>🌏 JSON 多语言本地化翻译器</h1>
 
   <label>API Key：</label>
-  <input type="password" id="userApiKey" placeholder="sk-..." />
+  <input type="password" id="userApiKey" placeholder="API-KEY" />
 
   <label>源 JSON：</label>
   <textarea id="sourceJSON" placeholder="粘贴你的 JSON 或点击上传按钮"></textarea>
@@ -124,7 +124,7 @@ textarea{min-height:160px;resize:vertical;}
 </div>
 
 <script>
-const API = "https://your-worker-domain.workers.dev"; // ← 换成你的 Cloudflare Worker 地址
+const API = "https://fast-chat-worker.ne0s0u1-pd.workers.dev"; 
 const langs = ["zh","ja","de","pt","es","fr","ko","tw","vi"];
 const el = {
   runBtn: document.getElementById("runBtn"),
