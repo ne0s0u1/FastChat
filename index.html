@@ -2,155 +2,221 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fast Chat</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🌏 JSON 多语言本地化翻译器</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  body {
-    font-family: "Segoe UI", sans-serif;
-    background: #f7f8fa;
-    margin: 0; padding: 40px 20px;
-    display: flex; flex-direction: column; align-items: center;
-  }
-  h1 { margin: 0 0 12px; color: #2563eb; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-  label { font-weight: 600; }
-  input[type="password"] {
-    padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; min-width: 280px;
-  }
-  textarea {
-    width: 100%; max-width: 820px; min-height: 160px;
-    padding: 12px; font-size: 15px;
-    border: 1px solid #ccc; border-radius: 8px; resize: vertical;
-  }
-  button {
-    margin-top: 10px; padding: 10px 16px;
-    font-weight: 600; border: none; border-radius: 8px;
-    background: #2563eb; color: #fff; cursor: pointer;
-  }
-  button:hover { background: #1d4ed8; }
-  pre {
-    width: 100%; max-width: 820px;
-    background: #fff; border: 1px solid #ddd;
-    border-radius: 8px; padding: 12px;
-    white-space: pre-wrap; word-wrap: break-word;
-    overflow-y: auto; max-height: 70vh;
-    font-family: "JetBrains Mono", monospace;
-  }
+:root{
+  --brand:#3b82f6;
+  --ok:#10b981;
+  --warn:#ef4444;
+  --bg:#f8fafc;
+  --card:#fff;
+  --border:#e5e7eb;
+  --text:#1f2937;
+}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  margin:0;
+  padding:40px 0;
+  display:flex;
+  justify-content:center;
+}
+.container{
+  background:var(--card);
+  border-radius:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.05);
+  padding:28px;
+  max-width:1180px;
+  width:100%;
+}
+h1{text-align:center;color:var(--brand);font-size:1.9rem;margin:0;}
+label{font-weight:600;display:block;margin:16px 0 6px;}
+textarea,input[type="text"],input[type="password"]{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+  font-size:14px;
+  font-family:monospace;
+  transition:border-color .2s, box-shadow .2s;
+}
+textarea:focus,input:focus{
+  outline:none;
+  border-color:var(--brand);
+  box-shadow:0 0 0 3px rgba(59,130,246,0.15);
+}
+textarea{min-height:160px;resize:vertical;}
+.btn{
+  display:inline-block;
+  padding:10px 16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  color:#fff;
+  background:linear-gradient(90deg,var(--brand),#06b6d4);
+  transition:transform .1s;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;}
+.status{
+  margin-top:14px;
+  font-weight:500;
+  padding:10px;
+  border-radius:8px;
+  background:#f1f5f9;
+}
+.status.ok{color:var(--ok);background:#ecfdf5;}
+.status.warn{color:var(--warn);background:#fef2f2;}
+.lang-card{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+  margin:12px 0;
+  background:#fff;
+}
+.lang-card h3{margin:0 0 6px;color:var(--brand);}
+.lang-card pre{
+  background:#f9fafb;
+  padding:10px;
+  border-radius:8px;
+  max-height:240px;
+  overflow:auto;
+  font-size:13px;
+}
+.lang-card a{
+  display:inline-block;
+  margin-top:6px;
+  color:var(--brand);
+  text-decoration:none;
+  font-size:13px;
+}
+#downloadAll{
+  background:var(--ok);
+}
 </style>
 </head>
 <body>
-  <h1>⚡ Fast Chat</h1>
 
-  <div class="row">
-    <label>API Key：</label>
-    <input type="password" id="userApiKey" placeholder="sk-..." />
+<div class="container">
+  <h1>🌏 JSON 多语言本地化翻译器</h1>
+
+  <label>API Key：</label>
+  <input type="password" id="userApiKey" placeholder="sk-..." />
+
+  <label>源 JSON：</label>
+  <textarea id="sourceJSON" placeholder="粘贴你的 JSON 或点击上传按钮"></textarea>
+  <input type="file" id="uploadFile" accept=".json" style="margin-top:6px;" />
+
+  <label>最佳翻译参考：</label>
+  <input type="text" id="bestExample" placeholder="例如：AI Stem Splitter" />
+
+  <div class="actions">
+    <button id="runBtn" class="btn">🚀 开始翻译（9种语言）</button>
+    <button id="downloadAll" class="btn">⬇ 下载全部 ZIP</button>
   </div>
 
-  <textarea id="prompt" placeholder="输入提示词..."></textarea>
-  <button id="sendBtn">发送</button>
-  <pre id="output">（等待输入）</pre>
-
-  <!-- 拼接提示词面板 -->
-<div class="prompt-builder" style="margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-  <h3 style="margin-bottom: 10px; font-size: 16px;">🔧 拼接提示词</h3>
-
-  <div style="display: flex; flex-direction: column; gap: 8px;">
-    <label>目标语言：</label>
-    <input type="text" id="targetLang" placeholder="例如：ja 或 zh" style="padding:8px;border:1px solid #ccc;border-radius:8px;">
-
-    <label>Best（最佳翻译参考）：</label>
-    <textarea id="bestExample" placeholder="例如：AI音乐生成器 => 音楽生成AI" style="min-height:60px;padding:8px;border:1px solid #ccc;border-radius:8px;resize:vertical;"></textarea>
-
-    <label>源JSON：</label>
-    <textarea id="sourceJson" placeholder='在此粘贴原始JSON' style="min-height:120px;padding:8px;border:1px solid #ccc;border-radius:8px;resize:vertical;font-family:monospace;"></textarea>
-
-    <button id="buildPromptBtn" class="btn btn-ok" style="margin-top: 10px;">⚙️ 拼接提示词</button>
-  </div>
+  <div id="status" class="status">待翻译</div>
+  <div id="output"></div>
 </div>
 
-
 <script>
-const API = "https://fast-chat-worker.ne0s0u1-pd.workers.dev"; // 例如 https://fastchat.ne0s0u1.workers.dev
+const API = "https://your-worker-domain.workers.dev"; // ← 换成你的 Cloudflare Worker 地址
+const langs = ["zh","ja","de","pt","es","fr","ko","tw","vi"];
+const el = {
+  runBtn: document.getElementById("runBtn"),
+  output: document.getElementById("output"),
+  status: document.getElementById("status"),
+  apiKey: document.getElementById("userApiKey"),
+  src: document.getElementById("sourceJSON"),
+  best: document.getElementById("bestExample"),
+};
 
-const promptEl = document.getElementById("prompt");
-const keyEl = document.getElementById("userApiKey");
-const outputEl = document.getElementById("output");
-const sendBtn = document.getElementById("sendBtn");
+// 保存/加载 key
+el.apiKey.value = localStorage.getItem("apicore_user_key") || "";
+el.apiKey.addEventListener("input", ()=>localStorage.setItem("apicore_user_key",el.apiKey.value));
 
-// 从本地存储恢复 key
-keyEl.value = localStorage.getItem("user_api_key") || "";
-keyEl.addEventListener("input", () => {
-  localStorage.setItem("user_api_key", keyEl.value);
+document.getElementById("uploadFile").addEventListener("change", e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ el.src.value = r.result; };
+  r.readAsText(f);
 });
 
-sendBtn.addEventListener("click", async () => {
-  const prompt = promptEl.value.trim();
-  const key = keyEl.value.trim();
-  if (!prompt) return alert("请输入提示词");
-  if (!key.startsWith("sk-")) return alert("请输入有效的 API Key");
-
-  outputEl.textContent = "⏳ 正在请求...";
-  sendBtn.disabled = true;
-
-  try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: prompt, userApiKey: key })
-    });
-
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    outputEl.textContent = data.reply || JSON.stringify(data, null, 2);
-  } catch (err) {
-    outputEl.textContent = "❌ 错误：" + err.message;
-  } finally {
-    sendBtn.disabled = false;
-  }
-});
-
-  // 拼接提示词逻辑
-document.getElementById("buildPromptBtn").addEventListener("click", () => {
-  const lang = document.getElementById("targetLang").value.trim();
-  const best = document.getElementById("bestExample").value.trim();
-  const srcJson = document.getElementById("sourceJson").value.trim();
-
-  if (!lang || !srcJson) {
-    alert("请至少填写目标语言与源JSON。");
+async function translateAll(){
+  const jsonText = el.src.value.trim();
+  const bestExample = el.best.value.trim();
+  const userApiKey = el.apiKey.value.trim();
+  if(!jsonText || !userApiKey){
+    alert("请填写 JSON 与 API Key");
     return;
   }
 
-  const template = `你是一名专业的多语言本土化与 SEO 翻译专家。现需要将输入的JSON为目标语言，并输出为在原版JSON上改动后形成的JSON
-现在的目标语言为 ${lang}
-最佳翻译为：${best}
-【硬性规则】
-1. 德语连字符（-）禁止规则 — 最高优先级：
-2. 任何德语翻译中绝对禁止出现连字符（“-”），无论原文是否包含；必须改为常见的自然书写。
-例如 “AUDIO-ZU-MIDI” 必须输出为 “Audio zu MIDI”（无连字符），而非任何 “Audio-zu-MIDI / Audio-Zu-Midi”等带连字符形式。
-若去掉连字符会影响可读性或 SEO，也必须优先去掉连字符并采用最常见的写法（可用空格或合适大小写替代）。
-3. 返回的必须是JSON，且不能输出其他无关内容
-4. 只改动JSON中文案相关内容，id，component，CTALinkLink之类的不得翻译
-5. “|” 是普通正文字符，绝非分隔符；例如 “Free Key and BPM Finder | Find Song Key & BPM Online” 必须视为 一句完整文本整体翻译，绝不能拆分。
-6. 本土化 + SEO 优先：采用目标市场最自然、搜索量更高的说法；避免逐词直译；行业中常保留的英文外来词可保留。
-7. 品牌名/专有名词按目标市场约定处理：常见不翻译的保留原文；翻译会致歧义时保持原文。
-8. 非常重要：要将JSON中的CTAlink修改成对应语言的link，比如源JSON为/music-generator，需要翻译成繁体中文，那么修改后的就是/tw/music-generator
-9. 若原JSON中的...labelname为中文，不得翻译，保留中文
-【输出格式（务必严格遵守）】
-不得出现多余引号、额外解释或 Markdown 包裹。
-必须保持原有JSON的结构不能改动
-以下是源JSON
+  el.runBtn.disabled = true;
+  el.status.textContent = "🚧 正在并发翻译 9 种语言...";
+  el.output.innerHTML = "";
 
-${srcJson}
-`;
+  const res = await fetch(API,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({jsonText,bestExample,userApiKey,langs})
+  });
 
-  const targetBox = document.getElementById("prompt") || document.getElementById("customPrompt");
-  if (targetBox) {
-    targetBox.value = template;
-    targetBox.scrollIntoView({ behavior: "smooth" });
+  const data = await res.json();
+  if(data.error){ el.status.className="status warn"; el.status.textContent="❌ "+data.error; el.runBtn.disabled=false; return; }
+
+  renderResults(data.results);
+  el.status.className="status ok";
+  el.status.textContent="✅ 翻译完成";
+  el.runBtn.disabled=false;
+}
+
+function renderResults(results){
+  const out = el.output;
+  out.innerHTML = "";
+  for(const [lang,content] of Object.entries(results)){
+    const div = document.createElement("div");
+    div.className="lang-card";
+    div.innerHTML = `
+      <h3>${lang.toUpperCase()}</h3>
+      <pre>${content}</pre>
+      <a download="${lang}.json" href="data:application/json;charset=utf-8,${encodeURIComponent(content)}">⬇ 下载 ${lang}.json</a>
+    `;
+    out.appendChild(div);
   }
-  showToast("提示词已拼接完成");
+}
+
+document.getElementById("runBtn").addEventListener("click",translateAll);
+
+// 下载所有
+document.getElementById("downloadAll").addEventListener("click", async ()=>{
+  const cards = document.querySelectorAll(".lang-card pre");
+  if(cards.length===0){alert("没有可下载的内容");return;}
+  const zip = await createZip();
+  const blob = await zip.generateAsync({type:"blob"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "translations.zip";
+  a.click();
 });
 
+// 轻量级 JSZip 直接引入 CDN
+async function createZip(){
+  if(typeof JSZip==="undefined"){
+    await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js");
+  }
+  const zip = new JSZip();
+  document.querySelectorAll(".lang-card pre").forEach(pre=>{
+    const lang = pre.previousElementSibling.textContent.trim();
+    zip.file(`${lang}.json`, pre.textContent);
+  });
+  return zip;
+}
 </script>
+
 </body>
 </html>
