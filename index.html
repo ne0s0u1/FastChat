@@ -175,20 +175,41 @@ async function translateAll(){
   el.runBtn.disabled=false;
 }
 
-function renderResults(results){
+function renderResults(results) {
   const out = el.output;
   out.innerHTML = "";
-  for(const [lang,content] of Object.entries(results)){
+
+  for (const [lang, raw] of Object.entries(results)) {
+    const content = cleanFence(raw);
     const div = document.createElement("div");
-    div.className="lang-card";
+    div.className = "lang-card";
     div.innerHTML = `
       <h3>${lang.toUpperCase()}</h3>
-      <pre>${content}</pre>
-      <a download="${lang}.json" href="data:application/json;charset=utf-8,${encodeURIComponent(content)}">⬇ 下载 ${lang}.json</a>
+      <pre>${escapeHTML(content)}</pre>
+      <a download="${lang}.json" href="data:application/json;charset=utf-8,${encodeURIComponent(content)}">
+        ⬇ 下载 ${lang}.json
+      </a>
     `;
     out.appendChild(div);
   }
+
+  // 清除 Markdown 代码块包裹
+  function cleanFence(text) {
+    return String(text || "")
+      .replace(/^```(?:json)?\s*/i, "")   // 去掉开头 ```json
+      .replace(/```+$/i, "")              // 去掉所有结尾 ```
+      .trim();
+  }
+
+  // 防止 JSON 中的符号被当成 HTML
+  function escapeHTML(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
 }
+
 
 document.getElementById("runBtn").addEventListener("click",translateAll);
 
