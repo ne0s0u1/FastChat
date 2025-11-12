@@ -214,38 +214,63 @@ async function createZip(){
   }); return zip;
 }
 
-// Markdown 翻译
+// Markdown 翻译（横向表头版）
 document.getElementById("runMdBtn").addEventListener("click", async ()=>{
-  const text=document.getElementById("markdownInput").value.trim();
-  const bestExample=document.getElementById("mdBestExample").value.trim();
-  const userApiKey=el.apiKey.value.trim();
-  if(!text||!userApiKey) return alert("请填写 Markdown 与 API Key");
-  const status=document.getElementById("mdStatus");
-  status.textContent="🚧 正在并发翻译...";
-  const res=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({markdownText:text,bestExample,userApiKey,langs,mode:"markdown"})});
-  const data=await res.json();
-  const tbody=document.getElementById("mdOutput"); tbody.innerHTML="";
-  if(data.error){ status.textContent="❌ "+data.error; return; }
-  for(const [lang,content] of Object.entries(data.results)){
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td class='border-t px-3 py-2 font-semibold text-indigo-600'>${lang.toUpperCase()}</td>
-      <td class='border-t px-3 py-2 font-mono text-gray-700 whitespace-pre-wrap'>${content}</td>`;
-    tbody.appendChild(tr);
+  const text = document.getElementById("markdownInput").value.trim();
+  const bestExample = document.getElementById("mdBestExample").value.trim();
+  const userApiKey = el.apiKey.value.trim();
+  if (!text || !userApiKey) return alert("请填写 Markdown 与 API Key");
+
+  const status = document.getElementById("mdStatus");
+  status.textContent = "🚧 正在并发翻译...";
+
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      markdownText: text,
+      bestExample,
+      userApiKey,
+      langs,
+      mode: "markdown"
+    }),
+  });
+
+  const data = await res.json();
+  const tbody = document.getElementById("mdOutput");
+  tbody.innerHTML = "";
+
+  if (data.error) {
+    status.textContent = "❌ " + data.error;
+    return;
   }
-  status.textContent="✅ 翻译完成";
+
+  // 设置横向表头
+  const table = tbody.closest("table");
+  const thead = table.querySelector("thead");
+  thead.innerHTML = "<tr>" + langs.map(l => `<th class='py-2 px-3 border-b text-center text-gray-700 font-semibold'>${l.toUpperCase()}</th>`).join("") + "</tr>";
+
+  // 横向一行结果
+  const row = document.createElement("tr");
+  row.innerHTML = langs.map(lang => {
+    const val = data.results[lang] || "";
+    return `<td class='border-t px-3 py-2 font-mono text-gray-700 whitespace-pre-wrap align-top'>${val}</td>`;
+  }).join("");
+  tbody.appendChild(row);
+
+  status.textContent = "✅ 翻译完成";
 });
 
-// 复制 CSV
+// ✅ 复制 TSV（只复制数据行，不包含表头）
 document.getElementById("copyCsvBtn").addEventListener("click", ()=>{
-  const rows=[["Language","Translation"]];
-  document.querySelectorAll("#mdOutput tr").forEach(tr=>{
-    const tds=tr.querySelectorAll("td");
-    rows.push([tds[0].innerText, tds[1].innerText]);
-  });
-  const csv=rows.map(r=>r.map(v=>`"${v.replace(/"/g,'""')}"`).join(",")).join("\n");
-  navigator.clipboard.writeText(csv);
-  alert("✅ 已复制 CSV 到剪贴板！");
+  const tbody = document.getElementById("mdOutput");
+  const cells = tbody.querySelectorAll("td");
+  const values = Array.from(cells).map(td => td.innerText.replace(/\n/g, "\\n"));
+  const tsv = values.join("\t");
+  navigator.clipboard.writeText(tsv);
+  alert("✅ 已复制 TSV 数据行到剪贴板！");
 });
+
 </script>
 </body>
 </html>
