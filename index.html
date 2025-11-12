@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>JSON 多语言本地化翻译器</title>
+<title>多语言翻译工具 | JSON / Markdown 翻译器</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 @keyframes bgFlow {
@@ -14,6 +14,8 @@
 .animate-bgFlow { animation: bgFlow 10s ease-in-out infinite; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.4); border-radius: 6px; }
+.mode-btn { @apply px-4 py-2 rounded-lg font-semibold border border-indigo-200 text-indigo-600 bg-white hover:bg-indigo-50 transition-all; }
+.mode-btn.active { @apply bg-indigo-600 text-white shadow-md; }
 </style>
 </head>
 <body class="relative overflow-hidden font-sans text-gray-800">
@@ -22,67 +24,95 @@
 <div class="absolute inset-0 bg-gradient-to-b from-white via-[#f9fafb] to-[#f3f4f6]"></div>
 <div class="absolute inset-0 overflow-hidden">
   <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(99,102,241,0.15),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(167,139,250,0.1),transparent_60%)] animate-bgFlow"></div>
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="animate-pulse absolute top-[20%] left-[25%] w-2 h-2 bg-indigo-400 rounded-full opacity-40 blur-[2px]"></div>
-    <div class="animate-pulse absolute top-[60%] left-[70%] w-1.5 h-1.5 bg-purple-400 rounded-full opacity-40 blur-[1.5px]" style="animation-delay:0.8s"></div>
-    <div class="animate-pulse absolute top-[40%] left-[45%] w-2 h-2 bg-indigo-300 rounded-full opacity-30 blur-[1px]" style="animation-delay:1.5s"></div>
-  </div>
 </div>
 
-<!-- 主体内容 -->
 <section class="relative z-10 py-12 md:py-20">
   <div class="container mx-auto px-6">
-    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 text-center mb-10 tracking-tight">🌏 JSON 多语言本地化翻译器</h1>
+    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 text-center mb-10 tracking-tight flex items-center justify-center gap-2">
+      <img src="favicon.svg" alt="logo" class="w-10 h-10">多语言翻译工具
+    </h1>
 
-    <div class="flex flex-col md:flex-row gap-8">
+    <!-- 模式切换按钮 -->
+    <div class="flex justify-center gap-4 mb-8">
+      <button id="mode-json" class="mode-btn active">🧩 JSON 模式</button>
+      <button id="mode-md" class="mode-btn">📄 Markdown 模式</button>
+    </div>
 
-      <!-- 左：输入区 -->
-      <div class="md:w-2/5 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-6">
-        <label class="font-semibold text-gray-700 block mb-2">API Key：</label>
-        <input id="userApiKey" type="password" placeholder="sk-..." class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+    <!-- JSON 翻译器 -->
+    <div id="jsonSection">
+      <div class="flex flex-col md:flex-row gap-8">
+        <div class="md:w-2/5 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-6">
+          <label class="font-semibold text-gray-700 block mb-2">API Key：</label>
+          <input id="userApiKey" type="password" placeholder="sk-..." class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
 
-        <label class="font-semibold text-gray-700 block mb-2">源 JSON：</label>
-        <textarea id="sourceJSON" placeholder="粘贴你的 JSON 或点击上传按钮" class="w-full border border-gray-300 rounded-lg px-4 py-3 mb-3 font-mono text-sm h-48 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-300"></textarea>
+          <label class="font-semibold text-gray-700 block mb-2">源 JSON：</label>
+          <textarea id="sourceJSON" placeholder="粘贴你的 JSON 或点击上传按钮" class="w-full border border-gray-300 rounded-lg px-4 py-3 mb-3 font-mono text-sm h-48 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-300"></textarea>
 
-        <!-- 美化上传 -->
-        <div class="relative mb-4">
-          <input id="uploadFile" type="file" accept=".json" class="hidden" />
-          <label for="uploadFile"
-            class="group flex flex-col items-center justify-center w-full px-6 py-5 border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer bg-white/60 hover:bg-indigo-50 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-indigo-500 group-hover:text-indigo-700 mb-2"
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l4-4m-4 4l-4-4" />
-            </svg>
-            <span id="uploadLabel" class="text-sm text-gray-600 group-hover:text-indigo-700">点击或拖拽 JSON 文件上传</span>
-          </label>
+          <div class="relative mb-4">
+            <input id="uploadFile" type="file" accept=".json" class="hidden" />
+            <label for="uploadFile"
+              class="group flex flex-col items-center justify-center w-full px-6 py-5 border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer bg-white/60 hover:bg-indigo-50 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-indigo-500 group-hover:text-indigo-700 mb-2"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              <span id="uploadLabel" class="text-sm text-gray-600 group-hover:text-indigo-700">点击或拖拽 JSON 文件上传</span>
+            </label>
+          </div>
+
+          <label class="font-semibold text-gray-700 block mb-2">最佳翻译参考：</label>
+          <input id="bestExample" type="text" placeholder="例如：AI Stem Splitter" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+
+          <div class="flex flex-wrap gap-3 justify-center mb-4">
+            <button id="runBtn" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 hover:from-indigo-600 hover:to-purple-600 shadow-md transition-all">🚀 开始翻译</button>
+            <button id="downloadAll" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md transition-all">⬇ 下载全部 ZIP</button>
+          </div>
+
+          <div id="status" class="text-center text-gray-700 font-medium mb-2">待翻译</div>
+          <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+            <div id="progressBar" class="h-2 bg-gradient-to-r from-indigo-500 to-purple-500 w-0 transition-all duration-500"></div>
+          </div>
         </div>
 
-        <label class="font-semibold text-gray-700 block mb-2">最佳翻译参考：</label>
-        <input id="bestExample" type="text" placeholder="例如：AI Stem Splitter" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
-
-        <div class="flex flex-wrap gap-3 justify-center mb-4">
-          <button id="runBtn" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 hover:from-indigo-600 hover:to-purple-600 shadow-md transition-all">🚀 开始翻译</button>
-          <button id="downloadAll" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md transition-all">⬇ 下载全部 ZIP</button>
-        </div>
-
-        <div id="status" class="text-center text-gray-700 font-medium mb-2">待翻译</div>
-        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-          <div id="progressBar" class="h-2 bg-gradient-to-r from-indigo-500 to-purple-500 w-0 transition-all duration-500"></div>
+        <div class="md:w-3/5 bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 p-6 overflow-y-auto max-h-[75vh]" id="outputArea">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">翻译结果</h2>
+          <div id="output" class="grid sm:grid-cols-2 gap-4"></div>
         </div>
       </div>
+    </div>
 
-      <!-- 右：输出区 -->
-      <div class="md:w-3/5 bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 p-6 overflow-y-auto max-h-[75vh]" id="outputArea">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">翻译结果</h2>
-        <div id="output" class="grid sm:grid-cols-2 gap-4"></div>
+    <!-- Markdown 翻译器 -->
+    <div id="mdSection" class="hidden">
+      <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📄 Markdown 多语言翻译</h2>
+        <label class="font-semibold text-gray-700 block mb-2">Markdown 源文本：</label>
+        <textarea id="markdownInput" placeholder="粘贴处理过的 Markdown 文本（保留 \\n 与空格）" class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm h-64 resize-y mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-300"></textarea>
+
+        <label class="font-semibold text-gray-700 block mb-2">最佳翻译参考：</label>
+        <input id="mdBestExample" type="text" placeholder="例如：AI Music Generator" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6"/>
+
+        <div class="flex flex-wrap gap-3 justify-center mb-6">
+          <button id="runMdBtn" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 hover:from-indigo-600 hover:to-purple-600 shadow-md transition-all">🚀 开始翻译 Markdown</button>
+          <button id="copyCsvBtn" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md transition-all">📋 复制 CSV</button>
+        </div>
+
+        <div id="mdStatus" class="text-center text-gray-700 font-medium mb-2">待翻译</div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm border border-gray-300 rounded-xl bg-white shadow-sm">
+            <thead class="bg-gray-100 text-gray-700">
+              <tr><th class="py-2 px-3 border-b">语言</th><th class="py-2 px-3 border-b">翻译结果</th></tr>
+            </thead>
+            <tbody id="mdOutput"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <footer class="relative z-10 text-center text-gray-500 text-sm py-6">
-  © 2025 JSON Translator — Powered by Gemini 2.5 Flash
+  © 2025 Translator — Powered by Gemini 2.5 Flash
 </footer>
 
 <!-- JS逻辑 -->
@@ -99,6 +129,20 @@ const el = {
   progress: document.getElementById("progressBar"),
 };
 
+// 模式切换
+const jsonBtn = document.getElementById("mode-json");
+const mdBtn = document.getElementById("mode-md");
+const jsonSection = document.getElementById("jsonSection");
+const mdSection = document.getElementById("mdSection");
+jsonBtn.addEventListener("click", ()=>{
+  jsonSection.classList.remove("hidden"); mdSection.classList.add("hidden");
+  jsonBtn.classList.add("active"); mdBtn.classList.remove("active");
+});
+mdBtn.addEventListener("click", ()=>{
+  mdSection.classList.remove("hidden"); jsonSection.classList.add("hidden");
+  mdBtn.classList.add("active"); jsonBtn.classList.remove("active");
+});
+
 // 保存API Key
 el.apiKey.value = localStorage.getItem("apicore_user_key") || "";
 el.apiKey.addEventListener("input", ()=>localStorage.setItem("apicore_user_key", el.apiKey.value));
@@ -113,103 +157,93 @@ fileInput.addEventListener("change", e=>{
   r.onload = ()=>{ el.src.value = r.result; uploadLabel.textContent = `已选择：${f.name}`; };
   r.readAsText(f);
 });
-
-// 拖拽上传
 const dropArea = uploadLabel.parentElement;
-dropArea.addEventListener("dragover", e=>{
-  e.preventDefault(); dropArea.classList.add("bg-indigo-100");
-});
+dropArea.addEventListener("dragover", e=>{ e.preventDefault(); dropArea.classList.add("bg-indigo-100"); });
 dropArea.addEventListener("dragleave", ()=> dropArea.classList.remove("bg-indigo-100"));
 dropArea.addEventListener("drop", e=>{
   e.preventDefault(); dropArea.classList.remove("bg-indigo-100");
-  const f = e.dataTransfer.files[0];
-  if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{ el.src.value = r.result; uploadLabel.textContent = `已上传：${f.name}`; };
-  r.readAsText(f);
+  const f = e.dataTransfer.files[0]; if(!f) return;
+  const r = new FileReader(); r.onload = ()=>{ el.src.value = r.result; uploadLabel.textContent = `已上传：${f.name}`; }; r.readAsText(f);
 });
 
-// 主翻译逻辑
+// JSON 翻译
 async function translateAll(){
   const jsonText = el.src.value.trim();
   const bestExample = el.best.value.trim();
   const userApiKey = el.apiKey.value.trim();
   if(!jsonText || !userApiKey) return alert("请填写 JSON 与 API Key");
-
   el.runBtn.disabled = true;
   el.status.textContent = "🚧 正在并发翻译中...";
-  el.output.innerHTML = "";
-  el.progress.style.width = "10%";
-
-  const res = await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({jsonText,bestExample,userApiKey,langs})
-  });
-
+  el.output.innerHTML = ""; el.progress.style.width = "10%";
+  const res = await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonText,bestExample,userApiKey,langs})});
   const data = await res.json();
-  if(data.error){
-    el.status.textContent = "❌ " + data.error;
-    el.runBtn.disabled = false;
-    el.progress.style.width = "0%";
-    return;
-  }
-
+  if(data.error){ el.status.textContent = "❌ " + data.error; el.runBtn.disabled=false; el.progress.style.width="0%"; return; }
   renderResults(data.results);
-  el.status.textContent = "✅ 翻译完成";
-  el.progress.style.width = "100%";
-  el.runBtn.disabled = false;
+  el.status.textContent = "✅ 翻译完成"; el.progress.style.width = "100%"; el.runBtn.disabled=false;
 }
-
 function renderResults(results){
-  const out = el.output;
-  out.innerHTML = "";
-  let done = 0, total = Object.keys(results).length;
+  const out = el.output; out.innerHTML = "";
+  let done=0, total=Object.keys(results).length;
   for(const [lang, raw] of Object.entries(results)){
-    const content = cleanFence(raw);
-    const div = document.createElement("div");
-    div.className = "rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 p-3";
-    div.innerHTML = `
-      <h3 class="text-indigo-600 font-semibold text-sm mb-1">${lang.toUpperCase()}</h3>
-      <pre class="text-xs bg-gray-50 rounded-lg p-2 overflow-auto max-h-52 font-mono">${escapeHTML(content)}</pre>
-      <a download="${lang}.json" href="data:application/json;charset=utf-8,${encodeURIComponent(content)}" class="inline-block mt-1 text-xs text-indigo-500 font-medium hover:text-indigo-700">⬇ 下载 ${lang}.json</a>
-    `;
+    const content=cleanFence(raw);
+    const div=document.createElement("div");
+    div.className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 p-3";
+    div.innerHTML=`<h3 class='text-indigo-600 font-semibold text-sm mb-1'>${lang.toUpperCase()}</h3>
+      <pre class='text-xs bg-gray-50 rounded-lg p-2 overflow-auto max-h-52 font-mono'>${escapeHTML(content)}</pre>
+      <a download='${lang}.json' href='data:application/json;charset=utf-8,${encodeURIComponent(content)}' class='inline-block mt-1 text-xs text-indigo-500 font-medium hover:text-indigo-700'>⬇ 下载 ${lang}.json</a>`;
     out.appendChild(div);
-    done++;
-    el.progress.style.width = ((done/total)*100)+"%";
+    done++; el.progress.style.width=((done/total)*100)+"%";
   }
 }
-
-function cleanFence(text){
-  return String(text||"").replace(/^```(?:json)?\s*/i,"").replace(/```+$/i,"").trim();
-}
-function escapeHTML(str){
-  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
+function cleanFence(text){return String(text||"").replace(/^```(?:json)?\s*/i,"").replace(/```+$/i,"").trim();}
+function escapeHTML(str){return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 document.getElementById("runBtn").addEventListener("click", translateAll);
 document.getElementById("downloadAll").addEventListener("click", async ()=>{
-  const cards = document.querySelectorAll("#output pre");
+  const cards=document.querySelectorAll("#output pre");
   if(!cards.length){alert("没有可下载的内容");return;}
-  const zip = await createZip();
-  const blob = await zip.generateAsync({type:"blob"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "translations.zip";
-  a.click();
+  const zip=await createZip(); const blob=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="translations.zip"; a.click();
+});
+async function createZip(){
+  if(typeof JSZip==="undefined"){ await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"); }
+  const zip=new JSZip(); document.querySelectorAll("#output pre").forEach(pre=>{
+    const lang=pre.parentElement.querySelector("h3").textContent.trim();
+    zip.file(`${lang}.json`, pre.textContent);
+  }); return zip;
+}
+
+// Markdown 翻译
+document.getElementById("runMdBtn").addEventListener("click", async ()=>{
+  const text=document.getElementById("markdownInput").value.trim();
+  const bestExample=document.getElementById("mdBestExample").value.trim();
+  const userApiKey=el.apiKey.value.trim();
+  if(!text||!userApiKey) return alert("请填写 Markdown 与 API Key");
+  const status=document.getElementById("mdStatus");
+  status.textContent="🚧 正在并发翻译...";
+  const res=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({markdownText:text,bestExample,userApiKey,langs,mode:"markdown"})});
+  const data=await res.json();
+  const tbody=document.getElementById("mdOutput"); tbody.innerHTML="";
+  if(data.error){ status.textContent="❌ "+data.error; return; }
+  for(const [lang,content] of Object.entries(data.results)){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class='border-t px-3 py-2 font-semibold text-indigo-600'>${lang.toUpperCase()}</td>
+      <td class='border-t px-3 py-2 font-mono text-gray-700 whitespace-pre-wrap'>${content}</td>`;
+    tbody.appendChild(tr);
+  }
+  status.textContent="✅ 翻译完成";
 });
 
-async function createZip(){
-  if(typeof JSZip==="undefined"){
-    await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js");
-  }
-  const zip = new JSZip();
-  document.querySelectorAll("#output pre").forEach(pre=>{
-    const lang = pre.parentElement.querySelector("h3").textContent.trim();
-    zip.file(`${lang}.json`, pre.textContent);
+// 复制 CSV
+document.getElementById("copyCsvBtn").addEventListener("click", ()=>{
+  const rows=[["Language","Translation"]];
+  document.querySelectorAll("#mdOutput tr").forEach(tr=>{
+    const tds=tr.querySelectorAll("td");
+    rows.push([tds[0].innerText, tds[1].innerText]);
   });
-  return zip;
-}
+  const csv=rows.map(r=>r.map(v=>`"${v.replace(/"/g,'""')}"`).join(",")).join("\n");
+  navigator.clipboard.writeText(csv);
+  alert("✅ 已复制 CSV 到剪贴板！");
+});
 </script>
 </body>
 </html>
