@@ -395,7 +395,7 @@ const modalCopyBtn = document.getElementById('modalCopyBtn');
 
 // 打开模态框 (挂载到 window 供 HTML onclick 调用)
 window.expandCard = function(lang, btn) {
-    const card = btn.closest('div').parentElement; // 找到卡片容器
+    const card = btn.closest('.group'); 
     const fullContent = card.querySelector('.data-source').value; // 获取隐藏的完整内容
     
     // 解码 HTML 实体用于显示
