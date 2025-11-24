@@ -1,125 +1,232 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>JSON / Markdown 翻译器</title>
+<link rel="icon" href="data:,">
+<!-- 引入 Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- 引入 Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
+<!-- 引入 Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
 <style>
-@keyframes bgFlow {
-  0% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(1deg); }
-  100% { transform: translateY(0px) rotate(0deg); }
-}
-.animate-bgFlow { animation: bgFlow 10s ease-in-out infinite; }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.4); border-radius: 6px; }
-.mode-btn { @apply px-4 py-2 rounded-lg font-semibold border border-indigo-200 text-indigo-600 bg-white hover:bg-indigo-50 transition-all; }
-.mode-btn.active { @apply bg-indigo-600 text-white shadow-md; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  
+  body { font-family: 'Inter', sans-serif; }
+  .lucide { vertical-align: middle; }
+  
+  /* 模式切换动画 */
+  .fade-in { animation: fadeIn 0.3s ease-in-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* 动态背景流光 */
+  @keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+  .animate-blob { animation: blob 7s infinite; }
+  .animation-delay-2000 { animation-delay: 2s; }
+  .animation-delay-4000 { animation-delay: 4s; }
 </style>
 </head>
-<body class="relative overflow-x-hidden font-sans text-gray-800 bg-[#f9fafb]">
+<body class="bg-slate-50 min-h-screen p-3 md:p-8 relative selection:bg-purple-200 selection:text-purple-900 flex flex-col items-center">
 
-<!-- 背景 -->
-<div class="fixed inset-0 -z-10">
-  <div class="absolute inset-0 bg-gradient-to-b from-white via-[#f9fafb] to-[#f3f4f6]"></div>
-  <div class="absolute inset-0 overflow-hidden">
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(99,102,241,0.15),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(167,139,250,0.1),transparent_60%)] animate-bgFlow"></div>
+  <!-- 背景装饰 -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+    <div class="absolute top-0 left-0 w-full h-full bg-slate-50/50"></div>
+    <div class="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-purple-300/30 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
+    <div class="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-blue-300/30 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000"></div>
+    <div class="absolute bottom-[-20%] left-[20%] w-[40rem] h-[40rem] bg-pink-300/30 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000"></div>
+    <!-- 中央高光 -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vh] bg-gradient-to-tr from-purple-100/20 to-blue-100/20 rounded-full blur-[80px]"></div>
   </div>
-</div>
 
-<section class="relative z-10 py-12 md:py-20 min-h-screen">
-  <div class="container mx-auto px-6">
-    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 text-center mb-10 tracking-tight flex items-center justify-center gap-2">
-      <img src="favicon.svg" alt="logo" class="w-10 h-10">JSON/MarkDown翻译
-    </h1>
+  <!-- 主容器 -->
+  <div class="container max-w-[95%] 2xl:max-w-[1600px] w-full transition-all duration-300">
+    <div class="bg-white/30 backdrop-blur-2xl rounded-[32px] border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 md:p-10 relative overflow-hidden ring-1 ring-white/40 min-h-[85vh] flex flex-col">
+      
+      <!-- 顶部装饰条 -->
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-1.5 bg-white/50 rounded-b-lg backdrop-blur-md"></div>
 
-    <!-- 模式切换按钮 -->
-    <div class="flex justify-center gap-4 mb-8">
-      <button id="mode-json" class="mode-btn active">🧩 JSON 模式</button>
-      <button id="mode-md" class="mode-btn">📄 Markdown 模式</button>
-    </div>
-
-    <!-- JSON 翻译器 -->
-    <div id="jsonSection">
-      <div class="flex flex-col md:flex-row gap-8">
-        <div class="md:w-2/5 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-6">
-          <label class="font-semibold text-gray-700 block mb-2">API Key：</label>
-          <input id="userApiKey" type="password" placeholder="sk-..." class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
-
-          <label class="font-semibold text-gray-700 block mb-2">源 JSON：</label>
-          <textarea id="sourceJSON" placeholder="粘贴你的 JSON 或点击上传按钮" class="w-full border border-gray-300 rounded-lg px-4 py-3 mb-3 font-mono text-sm h-48 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-300"></textarea>
-
-          <div class="relative mb-4">
-            <input id="uploadFile" type="file" accept=".json" class="hidden" />
-            <label for="uploadFile"
-              class="group flex flex-col items-center justify-center w-full px-6 py-5 border-2 border-dashed border-indigo-300 rounded-xl cursor-pointer bg-white/60 hover:bg-indigo-50 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-indigo-500 group-hover:text-indigo-700 mb-2"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M7 16V4m0 0L3 8m4-4l4 4m6 8v4m0 0l4-4m-4 4l-4-4" />
-              </svg>
-              <span id="uploadLabel" class="text-sm text-gray-600 group-hover:text-indigo-700">点击或拖拽 JSON 文件上传</span>
-            </label>
+      <!-- Header & Mode Switcher -->
+      <div class="flex flex-col md:flex-row items-center justify-between mb-8 border-b border-white/30 pb-6 gap-6">
+        <!-- Title -->
+        <div class="flex items-center gap-4">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/60 shadow-sm border border-white/50 backdrop-blur-md shrink-0">
+            <i data-lucide="languages" class="w-6 h-6 text-purple-600"></i>
           </div>
-
-          <label class="font-semibold text-gray-700 block mb-2">最佳翻译参考：</label>
-          <input id="bestExample" type="text" placeholder="例如：AI Stem Splitter" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
-
-          <div class="flex flex-wrap gap-3 justify-center mb-4">
-            <button id="runBtn" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 hover:from-indigo-600 hover:to-purple-600 shadow-md transition-all">🚀 开始翻译</button>
-            <button id="downloadAll" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md transition-all">⬇ 下载全部 ZIP</button>
-          </div>
-
-          <div id="status" class="text-center text-gray-700 font-medium mb-2">待翻译</div>
-          <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-            <div id="progressBar" class="h-2 bg-gradient-to-r from-indigo-500 to-purple-500 w-0 transition-all duration-500"></div>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">JSON / Markdown 翻译</h1>
+            <p class="text-xs text-slate-500 font-medium mt-1">AI Powered Localization Tool</p>
           </div>
         </div>
 
-        <div class="md:w-3/5 bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 p-6 overflow-y-auto max-h-[75vh]" id="outputArea">
-          <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">翻译结果</h2>
-          <div id="output" class="grid sm:grid-cols-2 gap-4"></div>
+        <!-- Mode Buttons (Pill Style) -->
+        <div class="flex bg-white/40 p-1.5 rounded-2xl border border-white/40 shadow-sm backdrop-blur-md">
+          <button id="mode-json" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 text-slate-500 hover:text-slate-700 bg-white text-purple-700 shadow-sm ring-1 ring-black/5">
+            <i data-lucide="braces" class="w-4 h-4"></i> JSON 模式
+          </button>
+          <button id="mode-md" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 text-slate-500 hover:text-slate-700 hover:bg-white/30">
+            <i data-lucide="file-text" class="w-4 h-4"></i> Markdown 模式
+          </button>
+        </div>
+      </div>
+
+      <!-- API Key Input (Global) -->
+      <div class="mb-6 relative max-w-2xl mx-auto md:mx-0">
+        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">API Key</label>
+        <div class="relative group">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i data-lucide="key" class="w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors"></i>
+            </div>
+            <input id="userApiKey" type="password" placeholder="输入 API Key (sk-...)" 
+              class="w-full h-12 pl-11 pr-4 bg-white/40 border border-transparent rounded-xl text-slate-700 text-sm hover:bg-white/60 focus:bg-white/90 focus:ring-2 focus:ring-purple-200 transition-all outline-none shadow-sm font-mono">
+        </div>
+      </div>
+
+      <!-- JSON Section -->
+      <div id="jsonSection" class="flex-1 flex flex-col lg:flex-row gap-8 fade-in">
+        
+        <!-- Left Column: Inputs -->
+        <div class="lg:w-2/5 flex flex-col gap-6">
+          <!-- Source JSON -->
+          <div class="flex-1 flex flex-col">
+             <div class="flex justify-between items-center mb-2">
+                <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">源 JSON 数据</label>
+                
+                <!-- File Upload -->
+                <div class="relative">
+                    <input id="uploadFile" type="file" accept=".json" class="hidden" />
+                    <label for="uploadFile" id="uploadLabel" class="cursor-pointer flex items-center gap-1.5 text-[11px] bg-white/50 px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 hover:bg-white transition-all border border-white/40 shadow-sm font-medium">
+                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> <span>上传 JSON</span>
+                    </label>
+                </div>
+             </div>
+             <textarea id="sourceJSON" placeholder='{"title": "Hello World", "desc": "..."}' 
+                class="w-full flex-1 p-5 min-h-[300px] bg-white/40 border border-transparent rounded-2xl text-slate-700 placeholder-slate-400 hover:bg-white/60 focus:bg-white/80 focus:border-purple-200 focus:ring-4 focus:ring-purple-100/50 transition-all outline-none shadow-sm resize-y font-mono text-xs leading-relaxed backdrop-blur-sm"></textarea>
+          </div>
+
+          <!-- Best Example -->
+          <div>
+            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">最佳翻译参考 (Context)</label>
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <i data-lucide="sparkles" class="w-4 h-4 text-yellow-500"></i>
+                </div>
+                <input id="bestExample" type="text" placeholder="例如：AI Stem Splitter => AI 音轨分离器" 
+                  class="w-full h-12 pl-11 pr-4 bg-white/40 border border-transparent rounded-xl text-slate-700 text-sm hover:bg-white/60 focus:bg-white/90 focus:ring-2 focus:ring-purple-200 transition-all outline-none shadow-sm">
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-2 gap-4 mt-2">
+            <button id="runBtn" class="h-14 rounded-xl bg-slate-800/90 text-white font-bold shadow-lg shadow-slate-400/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm backdrop-blur-md hover:bg-slate-900">
+               <i data-lucide="rocket" class="w-5 h-5"></i> 开始翻译
+            </button>
+            <button id="downloadAll" class="h-14 rounded-xl bg-white/60 text-slate-700 font-bold border border-slate-100 shadow-sm hover:bg-white/80 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 text-sm">
+               <i data-lucide="download" class="w-5 h-5"></i> 下载全部 ZIP
+            </button>
+          </div>
+          
+          <!-- Status & Progress -->
+          <div class="bg-white/30 rounded-xl p-4 border border-white/40 backdrop-blur-md flex flex-col gap-2">
+             <div class="flex justify-between items-center text-xs font-medium text-slate-600">
+                 <span id="status" class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> 待机中</span>
+             </div>
+             <div class="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-gradient-to-r from-purple-500 to-blue-500 w-0 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+             </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Output -->
+        <div class="lg:w-3/5 bg-white/30 backdrop-blur-md rounded-2xl border border-white/40 shadow-inner p-6 flex flex-col min-h-[500px]" id="outputArea">
+           <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+             <div class="p-2 bg-green-100/80 rounded-lg text-green-700 backdrop-blur-sm"><i data-lucide="check-circle-2" class="w-4 h-4"></i></div>
+             翻译结果预览
+           </h2>
+           <div id="output" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pr-2 custom-scroll flex-1">
+               <!-- Results will be injected here -->
+               <div class="col-span-full flex flex-col items-center justify-center text-slate-400 h-64 gap-3">
+                   <i data-lucide="ghost" class="w-10 h-10 opacity-50"></i>
+                   <p class="text-sm">暂无翻译结果</p>
+               </div>
+           </div>
+        </div>
+      </div>
+
+      <!-- Markdown Section -->
+      <div id="mdSection" class="hidden fade-in flex-1 flex flex-col">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
+            <!-- Input Area -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                 <div class="flex-1 flex flex-col">
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Markdown 源文本</label>
+                    <textarea id="markdownInput" placeholder="粘贴 Markdown 文本..." 
+                        class="w-full flex-1 p-5 min-h-[300px] bg-white/40 border border-transparent rounded-2xl text-slate-700 placeholder-slate-400 hover:bg-white/60 focus:bg-white/80 focus:border-purple-200 focus:ring-4 focus:ring-purple-100/50 transition-all outline-none shadow-sm resize-y font-mono text-xs leading-relaxed backdrop-blur-sm"></textarea>
+                 </div>
+                 
+                 <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">Markdown 参考</label>
+                    <input id="mdBestExample" type="text" placeholder="例如：AI Music Generator" 
+                      class="w-full h-12 pl-4 pr-4 bg-white/40 border border-transparent rounded-xl text-slate-700 text-sm hover:bg-white/60 focus:bg-white/90 focus:ring-2 focus:ring-purple-200 transition-all outline-none shadow-sm">
+                 </div>
+
+                 <div class="grid grid-cols-2 gap-4">
+                    <button id="runMdBtn" class="h-12 rounded-xl bg-slate-800/90 text-white font-bold shadow-lg shadow-slate-400/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm backdrop-blur-md hover:bg-slate-900">
+                       <i data-lucide="file-text" class="w-4 h-4"></i> 开始翻译 MD
+                    </button>
+                    <button id="copyCsvBtn" class="h-12 rounded-xl bg-white/60 text-emerald-700 font-bold border border-emerald-100 shadow-sm hover:bg-white/80 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 text-sm">
+                       <i data-lucide="clipboard-copy" class="w-4 h-4"></i> 复制 CSV
+                    </button>
+                 </div>
+                 
+                 <div id="mdStatus" class="text-center text-xs font-medium text-slate-500 bg-white/30 rounded-lg p-2">待机中</div>
+            </div>
+
+            <!-- Table Output Area -->
+            <div class="lg:col-span-8 bg-white/30 backdrop-blur-md rounded-2xl border border-white/40 shadow-inner p-0 flex flex-col overflow-hidden relative">
+                <div class="p-4 border-b border-white/30 bg-white/20 flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <i data-lucide="table" class="w-4 h-4"></i> 结果预览
+                    </h2>
+                </div>
+                <div class="flex-1 overflow-auto custom-scroll p-4">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead>
+                            <tr class="bg-white/40 text-xs uppercase text-slate-600 font-bold tracking-wider text-center">
+                                <th class="p-4 border-b border-white/40">Waiting...</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mdOutput" class="text-sm text-slate-700 divide-y divide-white/30">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
       </div>
     </div>
 
-    <!-- Markdown 翻译器 -->
-    <div id="mdSection" class="hidden">
-      <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📄 Markdown 多语言翻译</h2>
-        <label class="font-semibold text-gray-700 block mb-2">Markdown 源文本：</label>
-        <textarea id="markdownInput" placeholder="粘贴处理过的 Markdown 文本（保留 \\n 与空格）" class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm h-64 resize-y mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-300"></textarea>
-
-        <label class="font-semibold text-gray-700 block mb-2">最佳翻译参考：</label>
-        <input id="mdBestExample" type="text" placeholder="例如：AI Music Generator" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6"/>
-
-        <div class="flex flex-wrap gap-3 justify-center mb-6">
-          <button id="runMdBtn" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 hover:from-indigo-600 hover:to-purple-600 shadow-md transition-all">🚀 开始翻译 Markdown</button>
-          <button id="copyCsvBtn" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md transition-all">📋 复制 CSV</button>
-        </div>
-
-        <div id="mdStatus" class="text-center text-gray-700 font-medium mb-2">待翻译</div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm border border-gray-300 rounded-xl bg-white shadow-sm">
-            <thead class="bg-gray-100 text-gray-700">
-              <tr><th class="py-2 px-3 border-b">语言</th><th class="py-2 px-3 border-b">翻译结果</th></tr>
-            </thead>
-            <tbody id="mdOutput"></tbody>
-          </table>
-        </div>
-      </div>
+    <!-- Footer -->
+    <div class="text-center mt-6 text-slate-400 text-xs font-medium">
+      © 2025 Translator — Powered by Gemini 2.5 Flash
     </div>
   </div>
-</section>
-
-<footer class="relative z-10 text-center text-gray-500 text-sm py-6">
-  © 2025 Translator — Powered by Gemini 2.5 Flash
-</footer>
 
 <!-- JS逻辑 -->
 <script>
+// 初始化图标
+lucide.createIcons();
+
 const API = "https://fast-chat-worker.ne0s0u1-pd.workers.dev";
 const langs = ["zh","ja","de","pt","es","fr","ko","tw","vi"];
 const el = {
@@ -132,19 +239,39 @@ const el = {
   progress: document.getElementById("progressBar"),
 };
 
-// 模式切换
+// 模式切换逻辑 (Style updates)
 const jsonBtn = document.getElementById("mode-json");
 const mdBtn = document.getElementById("mode-md");
 const jsonSection = document.getElementById("jsonSection");
 const mdSection = document.getElementById("mdSection");
-jsonBtn.addEventListener("click", ()=>{
-  jsonSection.classList.remove("hidden"); mdSection.classList.add("hidden");
-  jsonBtn.classList.add("active"); mdBtn.classList.remove("active");
-});
-mdBtn.addEventListener("click", ()=>{
-  mdSection.classList.remove("hidden"); jsonSection.classList.add("hidden");
-  mdBtn.classList.add("active"); jsonBtn.classList.remove("active");
-});
+
+const activeClass = "bg-white text-purple-700 shadow-sm ring-1 ring-black/5".split(" ");
+const inactiveClass = "text-slate-500 hover:text-slate-700 hover:bg-white/30".split(" ");
+
+function setMode(mode) {
+    if (mode === 'json') {
+        jsonSection.classList.remove("hidden");
+        mdSection.classList.add("hidden");
+        
+        jsonBtn.classList.remove(...inactiveClass);
+        jsonBtn.classList.add(...activeClass);
+        
+        mdBtn.classList.remove(...activeClass);
+        mdBtn.classList.add(...inactiveClass);
+    } else {
+        mdSection.classList.remove("hidden");
+        jsonSection.classList.add("hidden");
+        
+        mdBtn.classList.remove(...inactiveClass);
+        mdBtn.classList.add(...activeClass);
+        
+        jsonBtn.classList.remove(...activeClass);
+        jsonBtn.classList.add(...inactiveClass);
+    }
+}
+
+jsonBtn.addEventListener("click", () => setMode('json'));
+mdBtn.addEventListener("click", () => setMode('md'));
 
 // 保存API Key
 el.apiKey.value = localStorage.getItem("apicore_user_key") || "";
@@ -153,20 +280,14 @@ el.apiKey.addEventListener("input", ()=>localStorage.setItem("apicore_user_key",
 // 上传文件逻辑
 const fileInput = document.getElementById("uploadFile");
 const uploadLabel = document.getElementById("uploadLabel");
+const uploadSpan = uploadLabel.querySelector("span");
+
 fileInput.addEventListener("change", e=>{
   const f = e.target.files[0];
   if(!f) return;
   const r = new FileReader();
-  r.onload = ()=>{ el.src.value = r.result; uploadLabel.textContent = `已选择：${f.name}`; };
+  r.onload = ()=>{ el.src.value = r.result; uploadSpan.textContent = f.name; };
   r.readAsText(f);
-});
-const dropArea = uploadLabel.parentElement;
-dropArea.addEventListener("dragover", e=>{ e.preventDefault(); dropArea.classList.add("bg-indigo-100"); });
-dropArea.addEventListener("dragleave", ()=> dropArea.classList.remove("bg-indigo-100"));
-dropArea.addEventListener("drop", e=>{
-  e.preventDefault(); dropArea.classList.remove("bg-indigo-100");
-  const f = e.dataTransfer.files[0]; if(!f) return;
-  const r = new FileReader(); r.onload = ()=>{ el.src.value = r.result; uploadLabel.textContent = `已上传：${f.name}`; }; r.readAsText(f);
 });
 
 // JSON 翻译
@@ -176,24 +297,58 @@ async function translateAll(){
   const userApiKey = el.apiKey.value.trim();
   if(!jsonText || !userApiKey) return alert("请填写 JSON 与 API Key");
   el.runBtn.disabled = true;
-  el.status.textContent = "🚧 正在并发翻译中...";
+  el.runBtn.classList.add("opacity-70", "cursor-not-allowed");
+  
+  el.status.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> 翻译中...`;
+  lucide.createIcons();
+  
   el.output.innerHTML = ""; el.progress.style.width = "10%";
-  const res = await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonText,bestExample,userApiKey,langs})});
-  const data = await res.json();
-  if(data.error){ el.status.textContent = "❌ " + data.error; el.runBtn.disabled=false; el.progress.style.width="0%"; return; }
-  renderResults(data.results);
-  el.status.textContent = "✅ 翻译完成"; el.progress.style.width = "100%"; el.runBtn.disabled=false;
+  
+  try {
+      const res = await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonText,bestExample,userApiKey,langs})});
+      const data = await res.json();
+      
+      if(data.error){ 
+          el.status.innerHTML = `<span class="text-red-500 flex items-center gap-1"><i data-lucide="x-circle" class="w-3 h-3"></i> ${data.error}</span>`; 
+          el.runBtn.disabled=false; 
+          el.runBtn.classList.remove("opacity-70", "cursor-not-allowed");
+          el.progress.style.width="0%"; 
+          lucide.createIcons();
+          return; 
+      }
+      
+      renderResults(data.results);
+      el.status.innerHTML = `<span class="text-green-600 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> 完成</span>`; 
+      el.progress.style.width = "100%"; 
+      el.runBtn.disabled=false;
+      el.runBtn.classList.remove("opacity-70", "cursor-not-allowed");
+      lucide.createIcons();
+  } catch (e) {
+      alert("Network Error");
+      el.runBtn.disabled=false;
+      el.runBtn.classList.remove("opacity-70", "cursor-not-allowed");
+  }
 }
+
 function renderResults(results){
   const out = el.output; out.innerHTML = "";
   let done=0, total=Object.keys(results).length;
   for(const [lang, raw] of Object.entries(results)){
     const content=cleanFence(raw);
     const div=document.createElement("div");
-    div.className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 p-3";
-    div.innerHTML=`<h3 class='text-indigo-600 font-semibold text-sm mb-1'>${lang.toUpperCase()}</h3>
-      <pre class='text-xs bg-gray-50 rounded-lg p-2 overflow-auto max-h-52 font-mono'>${escapeHTML(content)}</pre>
-      <a download='${lang}.json' href='data:application/json;charset=utf-8,${encodeURIComponent(content)}' class='inline-block mt-1 text-xs text-indigo-500 font-medium hover:text-indigo-700'>⬇ 下载 ${lang}.json</a>`;
+    // New Card Style
+    div.className="rounded-xl border border-white/50 bg-white/40 shadow-sm hover:shadow-md hover:bg-white/60 transition-all duration-300 p-4 flex flex-col backdrop-blur-sm";
+    div.innerHTML=`
+      <div class="flex justify-between items-center mb-2">
+          <h3 class='text-purple-700 font-bold text-xs uppercase tracking-wider flex items-center gap-1'>
+             <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> ${lang.toUpperCase()}
+          </h3>
+          <a download='${lang}.json' href='data:application/json;charset=utf-8,${encodeURIComponent(content)}' class='text-[10px] bg-white/50 hover:bg-white px-2 py-1 rounded text-slate-600 hover:text-purple-600 border border-white/40 transition-colors'>
+             ⬇ 下载
+          </a>
+      </div>
+      <textarea readonly class='text-xs bg-slate-50/50 rounded-lg p-2 font-mono text-slate-600 border border-slate-200/50 outline-none resize-none h-32 w-full'>${escapeHTML(content)}</textarea>
+      `;
     out.appendChild(div);
     done++; el.progress.style.width=((done/total)*100)+"%";
   }
