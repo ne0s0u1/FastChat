@@ -306,6 +306,16 @@ async function translateAll(){
           el.progress.style.width="0%"; 
           return; 
       }
+
+    // 新增判断：如果没有一个语言翻译成功
+    if (Object.keys(data.results).length === 0) {
+        el.status.innerHTML = `<span class="text-red-500">❌ 所有请求均失败</span>`;
+        const firstErr = Object.values(data.errors)[0] || "未知错误";
+        alert("翻译失败，请检查 API Key 或模型配置。错误详情: " + firstErr);
+        el.runBtn.disabled = false;
+        el.runBtn.classList.remove("opacity-70", "cursor-not-allowed");
+        return;
+      }
       
       renderResults(data.results);
       
